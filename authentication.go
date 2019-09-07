@@ -48,9 +48,7 @@ func (a *App) authorizationMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		log.Infof("Authorization middleware succesfull for %s", profile.Username)
-		// set profile as headers in context
 		ctx := context.WithValue(r.Context(), "profile", profile)
-
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

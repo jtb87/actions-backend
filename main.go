@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
@@ -58,9 +59,13 @@ type Config struct {
 
 // startserver
 func (a *App) startServer() {
+	allowedHeaders := handlers.AllowedHeaders([]string{"content-type"})
+	allowedOrigins := handlers.AllowedOrigins([]string{"http://localhost:8080"})
+	allowedMethods := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
+
 	s := &http.Server{
 		Addr:    a.Config.port,
-		Handler: http.TimeoutHandler(a.Router, a.Config.timeout, "timeout"),
+		Handler: http.TimeoutHandler(handlers.CORS(allowedHeaders, allowedOrigins, allowedMethods, handlers.AllowCredentials())(a.Router), a.Config.timeout, "timeout"),
 	}
 	log.Fatal(s.ListenAndServe())
 }
