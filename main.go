@@ -4,6 +4,7 @@ import (
 	"backend/entities"
 	"backend/store"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -78,7 +79,7 @@ func (a *App) startServer() {
 	}
 
 	s := &http.Server{
-		Addr:    port,
+		Addr:    fmt.Sprintf(":%s", port),
 		Handler: http.TimeoutHandler(handlers.CORS(allowedHeaders, allowedOrigins, allowedMethods, handlers.AllowCredentials())(a.Router), timeout, "timeout"),
 	}
 	log.Fatal(s.ListenAndServe())
