@@ -1,0 +1,27 @@
+name: gc-cloud-deploy
+on: [push]
+jobs:
+  build_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Create service-account-file
+        run: |
+          echo -n '${{ secrets.GCLOUD_AUTH }}' > "$HOME"/gcloud.json
+      - name: Create config file
+        run: |
+          echo -n '${{ secrets.CONFIG }}' > config.json
+      - name: Install gcloud SDK
+        run: |
+          sudo apt-get update && sudo apt-get install google-cloud-sdk
+      - name: Install gcloud app-engine-go
+        run: |
+          sudo apt-get install google-cloud-sdk-app-engine-go
+      - name: Activate Service Account
+        run: |
+          sh -c "gcloud auth activate-service-account --key-file=$HOME/gcloud.json $*"
+      - name: deploy application
+        env:
+          CLOUDSDK_CORE_PROJECT: backendgoals
+        run: |
+          gcloud app deploy app.yaml
