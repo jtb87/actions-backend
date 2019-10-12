@@ -4,7 +4,6 @@ import (
 	"backend/entities"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -19,7 +18,6 @@ func (a *App) authenticate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	fmt.Printf("%+v", p)
 	err := a.Store.ProfileAuthentication(&p)
 	if err != nil {
 		respondWithError(w, err.Error())

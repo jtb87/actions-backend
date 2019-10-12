@@ -2,7 +2,6 @@ package store
 
 import (
 	"backend/entities"
-	"fmt"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -32,7 +31,6 @@ func (st *DbStore) AuthorizeToken(token string) (p entities.Profile, err error) 
 // ProfileAuthentication gets a user from the database
 func (st *DbStore) ProfileAuthentication(p *entities.Profile) (err error) {
 	row := st.DB.QueryRowx("SELECT id, token_hash from profile WHERE username=$1 AND password=$2", p.Username, p.Password)
-	fmt.Println(row)
 	err = row.Scan(&p.ID, &p.Token)
 	if err != nil {
 		log.Warning(err)

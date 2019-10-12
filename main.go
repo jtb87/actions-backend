@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/jtb87/goconfig"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -22,23 +23,27 @@ const DateTimeFormat = "2006-01-02 15:04:05"
 var storeInterface entities.StoreInterface
 
 func main() {
-	db, err := store.InitializeStore()
+	var c Config
+	err := goconfig.ParseConfig("config.json", &c)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	db, err := store.InitializeStore(c.DatabaseUsername, c.DatabasePassword, c.DataBasePort, c.DatabaseName, c.DatabaseHost)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	app := App{
-		Config: Config{
-			port:    ":9090",
-			timeout: time.Second * 15,
-		},
-		Store: db,
+		Config: c,
+		Store:  db,
 	}
 
 	// initialize router
 	app.NewRouter()
 	// initialize log
 	initLog()
-	log.Infof("Server running on http://localhost%s", app.Config.port)
+	log.Infof("Server running on http://localhost%s", app.Config.Port)
 	app.startServer()
 }
 
@@ -51,21 +56,30 @@ type App struct {
 
 // Config holds all the initialization information
 type Config struct {
-	port         string
-	timeout      time.Duration
-	databaseHost string
-	databasPort  string
+	Port             string        `json:"port"`
+	Timeout          time.Duration `json:"timeout"`
+	DatabaseHost     string        `json:"db_host"`
+	DataBasePort     int           `json:"db_port"`
+	DatabaseName     string        `json:"db_name"`
+	DatabaseUsername string        `json:"db_username"`
+	DatabasePassword string        `json:"db_password"`
 }
 
 // startserver
 func (a *App) startServer() {
 	allowedHeaders := handlers.AllowedHeaders([]string{"content-type"})
-	allowedOrigins := handlers.AllowedOrigins([]string{"http://localhost:8080"})
+	allowedOrigins := handlers.AllowedOrigins([]string{"http://localhost:8080", "https://www.codiq.eu"})
 	allowedMethods := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
+	timeout := time.Second * a.Config.Timeout
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = a.Config.Port
+		log.Printf("Defaulting to port %s", port)
+	}
 
 	s := &http.Server{
-		Addr:    a.Config.port,
-		Handler: http.TimeoutHandler(handlers.CORS(allowedHeaders, allowedOrigins, allowedMethods, handlers.AllowCredentials())(a.Router), a.Config.timeout, "timeout"),
+		Addr:    port,
+		Handler: http.TimeoutHandler(handlers.CORS(allowedHeaders, allowedOrigins, allowedMethods, handlers.AllowCredentials())(a.Router), timeout, "timeout"),
 	}
 	log.Fatal(s.ListenAndServe())
 }
@@ -102,16 +116,14 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 // NewRouter creates a new muxrouter
 func (a *App) NewRouter() {
 	a.Router = mux.NewRouter().StrictSlash(true)
-
 	// initialize routes
 	a.initializeAuth()
 	a.initializeAPI()
-
 	// initialize global middleware
 	a.Router.Use(logRequest)
 }
 
-// logRequest logging middleware
+// logRequest middleware for logging requests
 func logRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.WithFields(log.Fields{
@@ -121,34 +133,6 @@ func logRequest(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
-// func authMiddleware(next http.Handler) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		var header = r.Header.Get("x-access-token") //Grab the token from the header
-// 		header = strings.TrimSpace(header)
-// 		if header == "" {
-// 			//Token is missing, returns with error code 403 Unauthorized
-// 			w.WriteHeader(http.StatusForbidden)
-// 			json.NewEncoder(w).Encode(Exception{Message: "Missing auth token"})
-// 			return
-// 		}
-// 		// tk := &models.Token{}
-
-// 		_, err := jwt.ParseWithClaims(header, tk, func(token *jwt.Token) (interface{}, error) {
-// 			return []byte("secret"), nil
-// 		})
-
-// 		if err != nil {
-// 			w.WriteHeader(http.StatusForbidden)
-// 			json.NewEncoder(w).Encode(Exception{Message: err.Error()})
-// 			return
-// 		}
-
-// 		ctx := context.WithValue(r.Context(), "user", tk)
-// 		next.ServeHTTP(w, r.WithContext(ctx))
-
-// 	})
-// }
 
 // Set logging to std out or logfile
 func initLog() {

@@ -3,6 +3,7 @@ package store
 import (
 	"backend/entities"
 	_ "database/sql"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -16,14 +17,22 @@ type DbStore struct {
 }
 
 // InitializeStore inits datbase
-func InitializeStore() (entities.StoreInterface, error) {
-	// this Pings the database trying to connect, panics on error
-	// use sqlx.Open() for sql.Open() semantics
-	db, err := sqlx.Connect("postgres", "user=admin password=solarrules sslmode=disable")
+func InitializeStore(user string, password string, port int, dbname string, host string) (entities.StoreInterface, error) {
+
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+
+	db, err := sqlx.Connect("postgres", psqlInfo)
 	if err != nil {
 		log.Fatalln(err)
 		return nil, err
 	}
+	err = db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	log.Infoln("database connected")
 	return &DbStore{db, ""}, nil
 }
