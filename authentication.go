@@ -20,7 +20,8 @@ func (a *App) authenticate(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	err := a.Store.ProfileAuthentication(&p)
 	if err != nil {
-		respondWithError(w, err.Error())
+		respondWithJSON(w, http.StatusUnauthorized, "{'error': 'User not authenticated'}")
+		log.Errorf("failed authentication request: %v", err)
 		return
 	}
 	expiration := time.Now().Add(24 * time.Hour)
@@ -33,19 +34,18 @@ func (a *App) authenticate(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) authorizationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// get token from header
 		c, err := r.Cookie("codiq_session")
 		if err != nil {
-			respondWithError(w, err.Error())
+			respondWithJSON(w, http.StatusUnauthorized, "{'error': 'User not authenticated'}")
 			log.Errorf("error: %v", err)
 			return
 		}
 		profile, err := a.Store.AuthorizeToken(c.Value)
 		if err != nil {
-			respondWithJSON(w, http.StatusUnauthorized, "{'error': 'User not Authenticated'}")
+			respondWithJSON(w, http.StatusForbidden, "{'error': 'User not authorized'}")
+			log.Errorf("error: %v", err)
 			return
 		}
-		log.Infof("Authorization middleware succesfull for %s", profile.Username)
 		ctx := context.WithValue(r.Context(), "profile", profile)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
