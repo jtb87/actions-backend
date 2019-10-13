@@ -69,7 +69,7 @@ type Config struct {
 // startserver
 func (a *App) startServer() {
 	allowedHeaders := handlers.AllowedHeaders([]string{"content-type"})
-	allowedOrigins := handlers.AllowedOrigins([]string{"*"})
+	allowedOrigins := handlers.AllowedOrigins([]string{"https://www.codiq.eu/", "https://codiq.eu"})
 	allowedMethods := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
 	timeout := time.Second * a.Config.Timeout
 	port := os.Getenv("PORT")
