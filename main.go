@@ -44,7 +44,7 @@ func main() {
 	app.NewRouter()
 	// initialize log
 	initLog()
-	log.Infof("Server running on http://localhost%s", app.Config.Port)
+	log.Infof("Server running on http://localhost:%s", app.Config.Port)
 	app.startServer()
 }
 
@@ -69,7 +69,7 @@ type Config struct {
 // startserver
 func (a *App) startServer() {
 	allowedHeaders := handlers.AllowedHeaders([]string{"content-type"})
-	allowedOrigins := handlers.AllowedOrigins([]string{"http://localhost:8080", "https://www.codiq.eu", "*"})
+	allowedOrigins := handlers.AllowedOrigins([]string{"*"})
 	allowedMethods := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
 	timeout := time.Second * a.Config.Timeout
 	port := os.Getenv("PORT")
