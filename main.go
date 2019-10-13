@@ -29,8 +29,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	var psqlInfo string
+	if c.AppEngine {
+		psqlInfo = fmt.Sprintf("postgres://%s:%s@/postgres?host=/cloudsql/%s", c.DatabaseUsername, c.DatabasePassword, c.DatabaseHost)
+	} else {
+		psqlInfo = fmt.Sprintf("host=%s port=%d user=%s "+
+			"password=%s dbname=%s sslmode=disable",
+			c.DatabaseHost, c.DataBasePort, c.DatabaseUsername, c.DatabasePassword, c.DatabaseName)
+	}
 
-	db, err := store.InitializeStore(c.DatabaseUsername, c.DatabasePassword, c.DataBasePort, c.DatabaseName, c.DatabaseHost)
+	db, err := store.InitializeStore(psqlInfo)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -64,6 +72,7 @@ type Config struct {
 	DatabaseName     string        `json:"db_name"`
 	DatabaseUsername string        `json:"db_username"`
 	DatabasePassword string        `json:"db_password"`
+	AppEngine        bool          `json:"appengine"`
 }
 
 // startserver
