@@ -51,7 +51,7 @@ func main() {
 	// initialize router
 	app.NewRouter()
 	// initialize log
-	initLog()
+	InitLog()
 	log.Infof("Server running on http://localhost:%s", app.Config.Port)
 	app.startServer()
 }
@@ -94,22 +94,6 @@ func (a *App) startServer() {
 	log.Fatal(s.ListenAndServe())
 }
 
-// InitializeRoutes Initialize routes
-func (a *App) initializeAuth() {
-	a.Router.HandleFunc("/auth/login", a.authenticate).Methods("POST")
-}
-
-func (a *App) initializeAPI() {
-	api := a.Router.PathPrefix("/api").Subrouter()
-	api.Use(a.authorizationMiddleware)
-
-	api.HandleFunc("/action", a.getListOfActions).Methods("GET")
-	api.HandleFunc("/action", a.createAction).Methods("POST")
-	api.HandleFunc("/action/{id}", a.getAction).Methods("GET")
-	api.HandleFunc("/action/{id}", a.deleteAction).Methods("DELETE")
-	api.HandleFunc("/action/{id}/update", a.updateAction).Methods("POST")
-}
-
 func respondWithError(w http.ResponseWriter, message string) {
 	respondWithJSON(w, http.StatusBadRequest, map[string]string{"error": message})
 }
@@ -130,27 +114,21 @@ func (a *App) NewRouter() {
 	a.initializeAuth()
 	a.initializeAPI()
 	// initialize global middleware
-	a.Router.Use(logRequest)
+	a.Router.Use(LogRequest)
 }
 
-// logRequest middleware for logging requests
-func logRequest(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.WithFields(log.Fields{
-			"path":   r.URL.Path,
-			"method": r.Method,
-		}).Info("http-request")
-		next.ServeHTTP(w, r)
-	})
+// InitializeRoutes Initialize routes
+func (a *App) initializeAuth() {
+	a.Router.HandleFunc("/auth/login", a.authenticate).Methods("POST")
 }
 
-// Set logging to std out or logfile
-func initLog() {
-	log.SetFormatter(&log.JSONFormatter{})
-	// file, err := os.OpenFile("api_logs.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	// if err != nil {
-	// 	log.Info("Failed to log to file! using default stderr")
-	// }
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
+func (a *App) initializeAPI() {
+	api := a.Router.PathPrefix("/api").Subrouter()
+	api.Use(a.authorizationMiddleware)
+
+	api.HandleFunc("/action", a.getListOfActions).Methods("GET")
+	api.HandleFunc("/action", a.createAction).Methods("POST")
+	api.HandleFunc("/action/{id}", a.getAction).Methods("GET")
+	api.HandleFunc("/action/{id}", a.deleteAction).Methods("DELETE")
+	api.HandleFunc("/action/{id}/update", a.updateAction).Methods("POST")
 }
