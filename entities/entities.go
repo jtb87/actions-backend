@@ -63,3 +63,22 @@ type Goal struct {
 	Name        string
 	Description string
 }
+
+// CategoryInterface contract defines all the possible interactions with the category entity
+type CategoryInterface interface {
+	getListOfCategories(profileID int) ([]Category, error)
+	UpdateCategory(a *Category) error
+	CreateCategory(a *Category) error
+	DeleteCAtegory(id int) error
+	GetCategory(id int) (Action, error)
+}
+
+// Category entity
+type Category struct {
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	IntervalType string `json:"interval_type"`
+	Interval     int    `json:"interval"`
+	CreatedAt    string `json:"created_at"`
+	UpdatedAt    string `json:"updated_at"`
+}
