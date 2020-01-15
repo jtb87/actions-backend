@@ -1,7 +1,8 @@
-package main
+package app
 
 import (
 	"backend/entities"
+	"backend/utils"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -10,17 +11,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (a *App) authenticate(w http.ResponseWriter, r *http.Request) {
+func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) {
 	p := entities.Profile{}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&p); err != nil {
-		respondWithError(w, "Invalid request payload")
+		utils.RespondWithError(w, "Invalid request payload")
 		return
 	}
 	defer r.Body.Close()
-	err := a.Store.ProfileAuthentication(&p)
+	err := s.Store.ProfileAuthentication(&p)
 	if err != nil {
-		respondWithJSON(w, http.StatusUnauthorized, "{'error': 'User not authenticated'}")
+		utils.RespondWithJSON(w, http.StatusUnauthorized, "{'error': 'User not authenticated'}")
 		log.Errorf("failed authentication request: %v", err)
 		return
 	}
@@ -29,20 +30,20 @@ func (a *App) authenticate(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &cookie)
 
 	act := map[string]string{"status": "authenticated"}
-	respondWithJSON(w, http.StatusOK, act)
+	utils.RespondWithJSON(w, http.StatusOK, act)
 }
 
-func (a *App) authorizationMiddleware(next http.Handler) http.Handler {
+func (s *Server) authorizationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("codiq_session")
 		if err != nil {
-			respondWithJSON(w, http.StatusUnauthorized, "{'error': 'User not authenticated'}")
+			utils.RespondWithJSON(w, http.StatusUnauthorized, "{'error': 'User not authenticated'}")
 			log.Errorf("error: %v", err)
 			return
 		}
-		profile, err := a.Store.AuthorizeToken(c.Value)
+		profile, err := s.Store.AuthorizeToken(c.Value)
 		if err != nil {
-			respondWithJSON(w, http.StatusForbidden, "{'error': 'User not authorized'}")
+			utils.RespondWithJSON(w, http.StatusForbidden, "{'error': 'User not authorized'}")
 			log.Errorf("error: %v", err)
 			return
 		}
