@@ -17,7 +17,8 @@ type DbStore struct {
 
 // InitializeStore inits datbase
 func InitializeStore(psqlInfo string) (entities.StoreInterface, error) {
-	db, err := sqlx.Connect("postgres", psqlInfo)
+	// db, err := sqlx.Connect("postgres", psqlInfo)
+	db, err := sqlx.Open("postgres", psqlInfo)
 	if err != nil {
 		log.Fatalln(err)
 		return nil, err
