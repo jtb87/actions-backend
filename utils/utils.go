@@ -1,6 +1,7 @@
-package main
+package utils
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 
@@ -27,4 +28,19 @@ func InitLog() {
 	// }
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.DebugLevel)
+}
+
+// RespondWithError respond with error
+func RespondWithError(w http.ResponseWriter, message string) {
+	RespondWithJSON(w, http.StatusBadRequest, map[string]string{"error": message})
+}
+
+// RespondWithJSON respond with json
+func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	w.WriteHeader(code)
+	if payload != nil {
+		response, _ := json.Marshal(payload)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(response)
+	}
 }

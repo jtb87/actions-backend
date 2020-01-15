@@ -1,5 +1,8 @@
 name: gc-cloud-deploy
-on: [push]
+on:
+  push:
+    branches:
+      - master
 jobs:
   build_deploy:
     runs-on: ubuntu-latest

@@ -9,7 +9,7 @@ type StoreInterface interface {
 	ActionInterface
 	Authentication
 	ProfileInterface
-	// DeleteAction(a Action) error
+	CategoryInterface
 }
 
 // Authentication interface holds the interface for authentication
@@ -30,20 +30,21 @@ type ActionInterface interface {
 	UpdateAction(a *Action) error
 	CreateAction(a *Action) error
 	DeleteAction(id int) error
-	GetListOfActions(profileID int) ([]Action, error)
+	GetListOfActions(profileID, CategoryID int) ([]Action, error)
 }
 
 // Action holds basic information on when an action has occured
 type Action struct {
-	ID          int        `json:"id"`
-	Subject     string     `json:"subject"`
-	Description string     `json:"description"`
-	Category    string     `json:"category"`
-	ActionDate  *time.Time `json:"action_date"`
-	PlannedDate *time.Time `json:"planned_date"`
-	UpdateAt    *time.Time `json:"updated_at"`
-	CreatedAt   *time.Time `json:"created_at"`
-	ProfileID   int        `json:"profile_id"`
+	ID           int        `json:"id"`
+	Subject      string     `json:"subject"`
+	Description  string     `json:"description"`
+	CategoryID   int        `json:"category_id"`
+	CategoryName string     `json:"category_name"`
+	ActionDate   *time.Time `json:"action_date"`
+	PlannedDate  *time.Time `json:"planned_date"`
+	UpdatedAt    *time.Time `json:"updated_at"`
+	CreatedAt    *time.Time `json:"created_at"`
+	ProfileID    int        `json:"profile_id"`
 }
 
 // Profile entity
