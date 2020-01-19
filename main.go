@@ -15,7 +15,7 @@ var storeInterface entities.StoreInterface
 
 func main() {
 	var c app.Config
-	err := goconfig.ParseConfig("config_prod_local.json", &c)
+	err := goconfig.ParseConfig("config.json", &c)
 	if err != nil {
 		log.Fatal(err)
 	}
