@@ -1,4 +1,4 @@
-runtime: go111
+runtime: go113
 env: standard
 handlers:
   - url: /.*
@@ -7,4 +7,3 @@ handlers:
     redirect_http_response_code: "301"
   - url: .*
     script: auto
-network: {}

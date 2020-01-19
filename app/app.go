@@ -35,7 +35,7 @@ type Config struct {
 	DatabaseName     string        `json:"db_name"`
 	DatabaseUsername string        `json:"db_username"`
 	DatabasePassword string        `json:"db_password"`
-	ServerEngine     bool          `json:"Serverengine"`
+	AppEngine        bool          `json:"appengine"`
 }
 
 // NewRouter creates a new muxrouter

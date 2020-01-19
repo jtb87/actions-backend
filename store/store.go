@@ -2,10 +2,9 @@ package store
 
 import (
 	"backend/entities"
-	_ "database/sql"
 
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // postgres driver
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,17 +16,15 @@ type DbStore struct {
 
 // InitializeStore inits datbase
 func InitializeStore(psqlInfo string) (entities.StoreInterface, error) {
-	// db, err := sqlx.Connect("postgres", psqlInfo)
 	db, err := sqlx.Open("postgres", psqlInfo)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 		return nil, err
 	}
 	err = db.Ping()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	log.Infoln("database connected")
 	return &DbStore{db, ""}, nil
 }
