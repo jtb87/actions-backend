@@ -2,24 +2,84 @@ package store
 
 import (
 	"backend/entities"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 )
 
+// SliceScanInterface interface
+type SliceScanInterface interface {
+	SliceScan() ([]interface{}, error)
+}
+
+// DetectData detects whether or not there are values for the given column index
+func DetectData(slci SliceScanInterface, index int) bool {
+	sl, err := slci.SliceScan()
+	switch {
+	case err != nil:
+		return false
+	case sl[index] == nil:
+		return false
+	default:
+		return true
+	}
+}
+
 // GetListOfCategories gets an cation from the database.
 func (st *DbStore) GetListOfCategories(ProfileID int) (categories []entities.Category, err error) {
-	rows, err := st.DB.Queryx("SELECT id, name, interval, interval_type, created_at, updated_at from category")
+	qry := `
+	SELECT 
+	 cat.id, 
+	 cat.name, 
+	 cat.interval, 
+	 cat.interval_type, 
+	 cat.created_at, 
+	 cat.updated_at, 
+	 la.id, 
+	 la.subject, 
+	 la.action_date 
+	FROM category as cat left join action as la on la.id  = (
+		SELECT ac.id
+		FROM action as ac
+		WHERE 
+			ac.category_id = cat.id AND ac.action_date is not null
+		order by ac.action_date desc, id desc
+		LIMIT 1
+	)`
+
+	rows, err := st.DB.Queryx(qry)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	var cat entities.Category
 	for rows.Next() {
-		err = rows.Scan(&cat.ID, &cat.Name, &cat.Interval, &cat.IntervalType, &cat.CreatedAt, &cat.UpdatedAt)
-		if err != nil {
-			log.Error(err)
-			return
+		var cat entities.Category
+		if DetectData(rows, 6) {
+			var lastAction entities.Action
+			err = rows.Scan(
+				&cat.ID,
+				&cat.Name,
+				&cat.Interval,
+				&cat.IntervalType,
+				&cat.CreatedAt,
+				&cat.UpdatedAt,
+				&lastAction.ID,
+				&lastAction.Subject,
+				&lastAction.ActionDate)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			cat.LastAction = &lastAction
+		} else {
+			var nullvalue *interface{}
+			err = rows.Scan(&cat.ID, &cat.Name, &cat.Interval, &cat.IntervalType, &cat.CreatedAt, &cat.UpdatedAt, &nullvalue, &nullvalue, &nullvalue)
+			if err != nil {
+				log.Error(err)
+				return
+			}
 		}
+		cat.CalcDaysSinceLastAction()
 		categories = append(categories, cat)
 	}
 
@@ -28,11 +88,67 @@ func (st *DbStore) GetListOfCategories(ProfileID int) (categories []entities.Cat
 
 // GetCategory gets a category from the database.
 func (st *DbStore) GetCategory(id int) (cat entities.Category, err error) {
-	row := st.DB.QueryRowx("SELECT id, name, interval, interval_type, created_at, updated_at from category where id = $1", id)
-	err = row.Scan(&cat.ID, &cat.Name, &cat.Interval, &cat.IntervalType, &cat.CreatedAt, &cat.UpdatedAt)
+	qry := `	
+	SELECT 
+	cat.id, 
+	cat.name, 
+	cat.interval, 
+	cat.interval_type, 
+	cat.created_at, 
+	cat.updated_at, 
+	la.id, 
+	la.subject, 
+	la.action_date 
+   FROM category as cat left join action as la on la.id  = 
+   	(
+	   SELECT ac.id
+	   FROM action as ac
+	   WHERE 
+		   ac.category_id = cat.id AND ac.action_date is not null
+	   order by ac.action_date desc, id desc
+	   LIMIT 1
+	) 
+	WHERE cat.id = $1
+	`
+	// Using rows so the row is not closed after scanned
+	rows, err := st.DB.Queryx(qry, id)
 	if err != nil {
 		log.Error(err)
+		return
 	}
+	for rows.Next() {
+		if DetectData(rows, 6) {
+			var lastAction entities.Action
+			err = rows.Scan(
+				&cat.ID,
+				&cat.Name,
+				&cat.Interval,
+				&cat.IntervalType,
+				&cat.CreatedAt,
+				&cat.UpdatedAt,
+				&lastAction.ID,
+				&lastAction.Subject,
+				&lastAction.ActionDate)
+			if err != nil {
+				log.Error("something is up")
+				log.Error(err)
+				return
+			}
+			cat.LastAction = &lastAction
+		} else {
+			var nullvalue *interface{}
+			err = rows.Scan(&cat.ID, &cat.Name, &cat.Interval, &cat.IntervalType, &cat.CreatedAt, &cat.UpdatedAt, &nullvalue, &nullvalue, &nullvalue)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+		}
+	}
+	if cat.ID == 0 {
+		err = fmt.Errorf("category with id='%v' not found", id)
+		return
+	}
+	cat.CalcDaysSinceLastAction()
 	return
 }
 

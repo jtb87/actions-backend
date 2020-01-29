@@ -16,15 +16,26 @@ type CategoryInterface interface {
 
 // Category entity
 type Category struct {
-	ID           int        `json:"id"`
-	Name         string     `json:"name"`
-	IntervalType *string    `json:"interval_type"`
-	Interval     *int       `json:"interval"`
-	CreatedAt    *time.Time `json:"created_at"`
-	UpdatedAt    *time.Time `json:"updated_at"`
+	ID                  int        `json:"id"`
+	Name                string     `json:"name"`
+	IntervalType        *string    `json:"interval_type"`
+	Interval            *int       `json:"interval"`
+	CreatedAt           *time.Time `json:"created_at"`
+	UpdatedAt           *time.Time `json:"updated_at"`
+	DaysSinceLastAction *int       `json:"days_since_last_action"`
+
+	LastAction *Action `json:"-"`
 }
 
-var nameLength = 24
+// CalcDaysSinceLastAction calculates the DaysSinceLastActionField
+func (c *Category) CalcDaysSinceLastAction() {
+	if c.LastAction != nil && c.LastAction.ActionDate != nil {
+		interval := calculateDaysInterval(c.LastAction.ActionDate, nil)
+		c.DaysSinceLastAction = &interval
+	}
+}
+
+const nameLength = 24
 
 // Validate validates everything
 func (c *Category) Validate() (err error) {
@@ -56,3 +67,5 @@ func (c *Category) validIntervalType() bool {
 	}
 	return false
 }
+
+func (c *Category) calculateDaysSinceLastAction() {}
