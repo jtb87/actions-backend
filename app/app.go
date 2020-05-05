@@ -72,7 +72,7 @@ func (s *Server) initializeAPI() {
 
 // StartServer starts the server
 func (s *Server) StartServer() {
-	allowedHeaders := handlers.AllowedHeaders([]string{"content-type"})
+	allowedHeaders := handlers.AllowedHeaders([]string{"content-type", "X-token"})
 	allowedOrigins := handlers.AllowedOrigins([]string{"https://www.codiq.eu", "https://codiq.eu", "http://localhost:8080"})
 	allowedMethods := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
 	timeout := time.Second * s.Config.Timeout
